@@ -40,4 +40,6 @@ Then put a link at the bottom of your project, before `</body>` tag :
 <script type="text/javascript" src="http://your-domain-name/path-to-js/fixedTableHeader.js"></script>
 ```
 
+You can see [this page for exemples](http://www.ecyseo.net/?static10/fixed-table-header).
+
 Et c'est tout, bigre bougre !!!
