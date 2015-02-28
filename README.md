@@ -30,8 +30,8 @@ Initialize variables for script to work :
 <script type="text/javascript">
 //<!--
 var idContainer = 'content'; //mandatory
-var marge = 70; //optional
-var widthOrMinWidth = 'width'; // optional. Value can be 'width' or 'min-width'
+var marge = 70; //optional. Default = 100
+var widthOrMinWidth = 'width'; // optional. Value can be 'width' or 'min-width'. Default = 'min-width'
 //-->
 </script>
 ```
