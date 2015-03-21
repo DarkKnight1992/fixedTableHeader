@@ -3,7 +3,7 @@
 #
 # This file is part of SIGesTH
 #
-# Copyright (c) 2009 - 2015 Cyril MAGUIRE, <contact@ecyseo.net>
+# Copyright (c) 2009 - 2015 Cyril MAGUIRE, <contact(at)ecyseo.net>
 # Licensed under the CeCILL v2.1 license.
 # See http://www.cecill.info/licences.fr.html
 #
@@ -13,8 +13,7 @@
 // marge est la distance entre le haut de la fenêtre et le haut du tableau 
 // à partir de laquelle l'entête du tableau est en position fixe
 // Utile s'il y a un bloc fixe en haut de page, afin d'éviter que l'entête du tableau ne s'affiche en dessous
-if (marge == undefined || marge == null || isNaN(marge) == true) var marge = 100;
-if (widthOrMinWidth == undefined || widthOrMinWidth == null) var widthOrMinWidth = 'min-width';
+if (marge == undefined || marge == null || isNaN(marge) == true) var marge = 0;
 if (idContainer == undefined || idContainer == null) {  
     var idContainer;
     alert('Message de fixedTableHeader.js : Vous devez définir un container !');
@@ -22,16 +21,10 @@ if (idContainer == undefined || idContainer == null) {
 if (document.getElementById(idContainer) == undefined) {  
     alert('Message de fixedTableHeader.js : Le container '+idContainer+' n\'existe pas !');
 }
-;(function(idContainer,marge,widthOrMinWidth,window,undefined){
+;(function(idContainer,marge,window,undefined){
         'use_strict';
         
         if (idContainer == undefined || idContainer == null) return;
-
-        if (widthOrMinWidth != 'min-width') {
-            if (widthOrMinWidth != 'width') {
-                widthOrMinWidth = 'min-width';
-            }
-        }
 
         // On convertit en integer en utilisant |0 à la place de parseInt moins fiable
         // voir http://www.js-attitude.fr/2012/12/26/convertir-un-nombre-en-texte-en-javascript/
@@ -103,7 +96,7 @@ if (document.getElementById(idContainer) == undefined) {
         */
         function GetDomOffset( Obj, Prop ) {
             var iVal = 0;
-            while (Obj && Obj.tagName != 'body') {
+            while (Obj && (Obj.tagName != 'body' || Obj.tagName != 'BODY')) {
                 eval('iVal += Obj.' + Prop + ';');
                 Obj = Obj.offsetParent;
             }
@@ -132,17 +125,20 @@ if (document.getElementById(idContainer) == undefined) {
                     obj = this;
                 }
                 var pos = getScrollPosition();
-                for (var i = 0,c = obj.tbl.length; i < c; i++) {
+                var tabPos = []; 
+                var c = obj.tbl.length;
+                for (var i = 0; i < c; i++) {
                     if (obj.tbl[i] != undefined) {
-                        if (obj.tbl[i].posTop > 0 && obj.tbl[i].posBottom > 0) {
-                            pos[1] += obj.tbl[i].containerPosTop;
-                            if (pos[1] < obj.tbl[i].posTop) {
+                        tabPos[i] = (obj.tbl[i].posTop - (2*marge)) ;
+                        pos[1] += obj.tbl[i].containerPosTop;
+                        if (obj.tbl[i].posTop > 0 && obj.tbl[i].posBottom > 0) {       
+                            if (pos[1] < tabPos[i]) {
                                 obj.action(i,false);
                             }
-                            if (pos[1] > obj.tbl[i].posTop) {
+                            if (pos[1] > (tabPos[i]) ) {
                                 obj.action(i,true);
                             }
-                            if (pos[1] >= obj.tbl[i].posBottom) {
+                            if (pos[1] >= obj.tbl[i].posBottom ) {
                                 obj.action(i,false);
                             }
                         }
@@ -177,7 +173,8 @@ if (document.getElementById(idContainer) == undefined) {
         // widths est l'ensemble des largeurs de colonnes pour chaque tableau
         var widths = [];
         if (tables.length > 0){
-            for (var i = 0,c = tables.length; i <= c; i++) {
+            var c = tables.length;
+            for (var i = 0; i < c; i++) {
                 var lastcell = tables[i].getElementsByTagName('tr');
                 for (var j = 0,clast = lastcell.length; j <= clast; j++) {
                     if(j == 0) { posTop = GetDomOffset(lastcell[0],'offsetTop');}
@@ -189,10 +186,13 @@ if (document.getElementById(idContainer) == undefined) {
                 fixedHeaderTable.tbl[i].posTop = posTop;
                 fixedHeaderTable.tbl[i].posBottom = posBottom;
                 fixedHeaderTable.tbl[i].posLeft = GetDomOffset( tables[i], 'offsetLeft' );
-
-                var size = tables[i].getElementsByTagName('thead');
-                if (size[0]) {
-                    var nbOfRowsInHead = size[0].getElementsByTagName('tr').length;
+    
+                var size = [];
+                size[i] = tables[i].getElementsByTagName('thead');
+                var tableBody = [];
+                tableBody[i] = tables[i].getElementsByTagName('tbody');
+                if (size[i][0]) {
+                    var nbOfRowsInHead = size[i][0].getElementsByTagName('tr').length;
                 }
                 // TBODY
                 var tBod = tables[i].getElementsByTagName('tbody');
@@ -202,7 +202,8 @@ if (document.getElementById(idContainer) == undefined) {
                 var nbOfCols = 0;
                 var cellsOfThisRow = [];
                 if (nbOfRows) {
-                    for (var thisRow = 0,allRowsOfBody = nbOfRows.length; thisRow < allRowsOfBody; thisRow++) {
+                    var allRowsOfBody = nbOfRows.length;
+                    for (var thisRow = 0; thisRow < allRowsOfBody; thisRow++) {
                         cellsOfThisRow[thisRow] = nbOfRows[thisRow].getElementsByTagName('td');
                         var nbOfTdInThisRow = cellsOfThisRow[thisRow].length;
                         nbOfCols = (nbOfTdInThisRow >= nbOfCols ? nbOfTdInThisRow : nbOfCols);
@@ -212,31 +213,36 @@ if (document.getElementById(idContainer) == undefined) {
                 var colWidth = [];
                 var indexOfCol = 0;
                 if (allRowsOfBody) {
-                    for (var row = 0; row < allRowsOfBody; row++) {                            
-                        for (var cel = 0,nbOfCells= cellsOfThisRow[row].length; cel < nbOfCells; cel++) {
+                    for (var row = 0; row < allRowsOfBody; row++) {           
+                        var nbOfCells= cellsOfThisRow[row].length;                 
+                        for (var cel = 0; cel < nbOfCells; cel++) {
                             var widthOfThisCell = cellsOfThisRow[row][cel].offsetWidth;
                             colWidth[indexOfCol] = (widthOfThisCell > colWidth[indexOfCol] ? colWidth[indexOfCol] : widthOfThisCell);
                             indexOfCol++;
                         }
                     }
                 }
-                    
                 // THEAD
                 indexOfCol = 0;
-                if (size[0]) {
+                if (size[i][0]) {
                     // largeurs est l'ensemble des largeurs de colonnes pour un tableau donné
                     var largeurs = [];
                     widths[i] = [];
+                    var dec = 0
+                    var decalage = [];
+                    
+                        
                     // Pour chaque ligne d'entête
                     for (var k = 0; k < nbOfRowsInHead; k++) {
-                        if (size[k] != undefined) {
+                        if (size[i][k] != undefined) {
                             if(disp == 'block') {
-                                fixedHeaderTable.tbl[i].posBottom -= ((size[k].offsetHeight/2)+marge);
+                                fixedHeaderTable.tbl[i].posBottom -= ((size[i][k].offsetHeight/2)+marge);
                             } else {
-                                fixedHeaderTable.tbl[i].containerPosTop -= ((size[k].offsetHeight*2)+marge);
+                                fixedHeaderTable.tbl[i].containerPosTop -= ((size[i][k].offsetHeight*2)+marge);
                             }
-                            var cells = size[k].getElementsByTagName('th');
-                            for (var l = 0,ccells = cells.length; l < ccells; l++) {
+                            var cells = size[i][k].getElementsByTagName('th');
+                            var ccells = cells.length;
+                            for (var l = 0; l < ccells; l++) {
                                 largeurs[indexOfCol] = colWidth[indexOfCol];
                                 if (indexOfCol<nbOfCols-1) {
                                    indexOfCol++;
@@ -244,38 +250,81 @@ if (document.getElementById(idContainer) == undefined) {
                                    break;
                                 }
                             }
-                            for (var larg = 0,tot = largeurs.length; larg < tot; larg++) {
+                            var tot = largeurs.length;
+                            for (var larg = 0; larg < tot; larg++) {
                                 if (largeurs[larg] != null) {
-                                    widths[i].push(largeurs[larg]);
+                                    if (nbOfRowsInHead > 3) {
+                                        var colsp = cells[larg].getAttribute('colspan');
+                                        if (colsp == null) {
+                                            widths[i].push(largeurs[larg]);
+                                        }
+                                    } else {
+                                        widths[i].push(largeurs[larg]);
+                                    }
+                                    var rowsp = cells[larg].getAttribute('rowspan');
+                                    if (rowsp == null) {
+                                        decalage[dec] = largeurs[larg];
+                                        dec++;
+                                    }
                                 }
                             }
-                            var clone = size[k].cloneNode(true);
+                            var clone = size[i][k].cloneNode(true);
+                            var cloneBody = tableBody[i][k].cloneNode(true);
                             var mainTab = document.createElement('div');
                             mainDiv.setAttribute('style', 'position:relative;');
+                            cloneBody.setAttribute('style', 'visibility:hidden;border:none;');
+                            var cellsBodyFake = cloneBody.getElementsByTagName('td');
+                            var nbTds = cellsBodyFake.length;
+                            for (var m = 0; m < nbTds; m++) {
+                                cellsBodyFake[m].setAttribute('style','border:none;');
+                            };
                             mainDiv.appendChild(mainTab);
                             mainTab.innerHTML = '<table id="fixedtableheader'+i+'" class="fixedtableheader"></table>';
-                            mainTab.setAttribute('style', 'position:relative;');
+                            mainTab.setAttribute('style', 'position:relative;border:none;');
                             var tabFake = document.getElementById('fixedtableheader'+i);
-                            tabFake.setAttribute('style', 'display:block;position:fixed;top:'+marge+'px;max-width:'+mainTab.offsetWidth+'px;');
+                            tabFake.setAttribute('style', 'display:block;position:fixed;top:'+marge+'px;max-width:'+mainTab.offsetWidth+'px;background:transparent;border:none;');
                             tabFake.style.display = 'none';
                             tabFake.appendChild(clone);
+                            tabFake.appendChild(cloneBody);
+                            
                             var rowsFake = document.getElementById('fixedtableheader'+i).getElementsByTagName('tr');
-                            for (var eachRowOfHead = 0; eachRowOfHead < nbOfRowsInHead; eachRowOfHead++) {
-                                var cellsFake = rowsFake[eachRowOfHead].getElementsByTagName('th');
-                                for (var m = 0; m < nbOfCols; m++) {
+                            var cellsFake = rowsFake[0].getElementsByTagName('th');
+                            var indexOfWidth = 0;
+                            for (var m = 0; m < nbOfCols; m++) {
+                                if (cellsFake[m] != undefined) {                                            
+                                    var rowsp = cellsFake[m].getAttribute('rowspan');
+                                    if (rowsp == null && decalage[m] != undefined) {
+                                        if (cellsFake[m].getAttribute('style') != '') {
+                                            cellsFake[m].setAttribute('style','min-width:'+decalage[m]+'px;'); 
+                                        }
+
+                                    }    
                                     var colsp = cellsFake[m].getAttribute('colspan');
-                                    if (colsp != null) {
-                                        eachRowOfHead++;
-                                        m = nbOfCols;
+                                    if (colsp != null && rowsp == null) {
+                                        if (cellsFake[m].getAttribute('style') != '') {
+                                            var w = 0;
+                                            var colspanWidth = 0;
+                                            while (w != colsp) {
+                                                colspanWidth += widths[i][m+w];
+                                                w++;
+                                            }
+                                            cellsFake[m].setAttribute('style','min-width:'+colspanWidth+'px;');
+                                            indexOfWidth = m+w-1;
+                                        }
                                     } else {
                                         if (cellsFake[m].innerHTML == '') {
                                             cellsFake[m].innerHTML = '&nbsp;';
+                                            cellsFake[m].setAttribute('style','min-width:'+widths[i][indexOfWidth]+'px;'); 
                                         }
-                                        cellsFake[m].setAttribute('style',widthOrMinWidth+':'+widths[i][m]+'px;');   
+                                        if (cellsFake[m].getAttribute('style') != '') {
+                                            cellsFake[m].setAttribute('style','width:'+widths[i][indexOfWidth]+'px;'); 
+                                        }
                                     }
-                                };
+                                    indexOfWidth++;
+                                }
                             };
                             delete clone;
+                            delete cloneBody;
                         }
                     }
                 } else {
@@ -287,4 +336,4 @@ if (document.getElementById(idContainer) == undefined) {
 
         mainDiv.style.display = disp; 
 
-})(idContainer,marge,widthOrMinWidth,window);
+})(idContainer,marge,window);
